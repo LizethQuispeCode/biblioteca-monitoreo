@@ -1,0 +1,14 @@
+grafana:
+  adminPassword: "Biblioteca2026!"
+  service:
+    type: NodePort
+    nodePort: 30030
+prometheus:
+  service:
+    type: NodePort
+    nodePort: 30090
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    retention: 6h
