@@ -1,0 +1,92 @@
+
+[1;34m==> 1/8 Verificando prerrequisitos[0m
+Docker: 2 CPU, 7942 MB  ->  Minikube usara 2 CPU y 5000 MB
+
+[1;34m==> 2/8 Iniciando Minikube[0m
+* minikube v1.39.0 on Ubuntu 24.04 (docker/amd64)
+  - MINIKUBE_CPUS=2
+  - MINIKUBE_MEMORY=5000
+* Using the docker driver based on existing profile
+! You cannot change the memory size for an existing minikube cluster. Please first delete the cluster.
+* Starting "minikube" primary control-plane node in "minikube" cluster
+* Pulling base image v0.0.51 ...
+! Failing to connect to https://registry.k8s.io/ from inside the minikube container
+* To pull new external images, you may need to configure a proxy: https://minikube.sigs.k8s.io/docs/reference/networking/proxy/
+* Verifying Kubernetes components...
+  - Using image registry.k8s.io/metrics-server/metrics-server:v0.9.0
+  - Using image gcr.io/k8s-minikube/storage-provisioner:v5
+* Enabled addons: storage-provisioner, default-storageclass, metrics-server
+* Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
+node/minikube condition met
+* metrics-server is an addon maintained by Kubernetes. For any concerns contact minikube on GitHub.
+You can view the list of minikube maintainers at: https://github.com/kubernetes/minikube/blob/master/OWNERS
+  - Using image registry.k8s.io/metrics-server/metrics-server:v0.9.0
+* The 'metrics-server' addon is enabled
+
+[1;34m==> 3/8 Instalando kube-prometheus-stack (puede tardar varios minutos)[0m
+Warning: resource namespaces/monitoring is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resources created declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.
+namespace/monitoring configured
+Release "monitoring" does not exist. Installing it now.
+NAME: monitoring
+LAST DEPLOYED: Mon Oct 26 03:19:36 2026
+NAMESPACE: monitoring
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+NOTES:
+kube-prometheus-stack has been installed. Check its status by running:
+  kubectl --namespace monitoring get pods -l "release=monitoring"
+
+Get Grafana 'admin' user password by running:
+
+  kubectl --namespace monitoring get secrets monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+
+Access Grafana local instance:
+
+  export POD_NAME=$(kubectl --namespace monitoring get pod -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=monitoring" -oname)
+  kubectl --namespace monitoring port-forward $POD_NAME 3000
+
+Get your grafana admin user password by running:
+
+  kubectl get secret --namespace monitoring -l app.kubernetes.io/component=admin-secret -o jsonpath="{.items[0].data.admin-password}" | base64 --decode ; echo
+
+
+Visit https://github.com/prometheus-operator/kube-prometheus for instructions on how to create & configure Alertmanager and Prometheus instances using the Operator.
+
+[1;34m==> 4/8 Cargando el dashboard de Grafana[0m
+configmap/biblioteca-dashboard created
+configmap/biblioteca-dashboard labeled
+
+[1;34m==> 5/8 Construyendo las imagenes dentro del Docker de Minikube[0m
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 497B 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/eclipse-temurin:17-jre-alpine
+#2 ...
+
+#3 [internal] load metadata for docker.io/library/maven:3.9-eclipse-temurin-17
+#3 ...
+
+#2 [internal] load metadata for docker.io/library/eclipse-temurin:17-jre-alpine
+#2 ERROR: failed to do request: Head "https://registry-1.docker.io/v2/library/eclipse-temurin/manifests/17-jre-alpine": dial tcp: lookup registry-1.docker.io on 192.168.49.1:53: read udp 192.168.49.2:34166->192.168.49.1:53: i/o timeout
+
+#3 [internal] load metadata for docker.io/library/maven:3.9-eclipse-temurin-17
+#3 ERROR: failed to do request: Head "https://registry-1.docker.io/v2/library/maven/manifests/3.9-eclipse-temurin-17": dial tcp: lookup registry-1.docker.io on 192.168.49.1:53: read udp 192.168.49.2:34166->192.168.49.1:53: i/o timeout
+------
+ > [internal] load metadata for docker.io/library/maven:3.9-eclipse-temurin-17:
+------
+------
+ > [internal] load metadata for docker.io/library/eclipse-temurin:17-jre-alpine:
+------
+Dockerfile:10
+--------------------
+   8 |     
+   9 |     # ---------- Etapa 2: ejecucion (imagen liviana) ----------
+  10 | >>> FROM eclipse-temurin:17-jre-alpine
+  11 |     WORKDIR /app
+  12 |     RUN addgroup -S app && adduser -S app -G app
+--------------------
+ERROR: failed to build: failed to solve: eclipse-temurin:17-jre-alpine: failed to resolve source metadata for docker.io/library/eclipse-temurin:17-jre-alpine: failed to do request: Head "https://registry-1.docker.io/v2/library/eclipse-temurin/manifests/17-jre-alpine": dial tcp: lookup registry-1.docker.io on 192.168.49.1:53: read udp 192.168.49.2:34166->192.168.49.1:53: i/o timeout
