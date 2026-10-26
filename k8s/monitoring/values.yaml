@@ -1,14 +1,53 @@
+# Configuracion propia del chart kube-prometheus-stack (release: monitoring)
+# helm install monitoring prometheus-community/kube-prometheus-stack -n monitoring -f k8s/monitoring/values.yaml
+
 grafana:
   adminPassword: "Biblioteca2026!"
   service:
     type: NodePort
     nodePort: 30030
+
 prometheus:
   service:
     type: NodePort
     nodePort: 30090
   prometheusSpec:
+    # Por defecto el chart solo toma los ServiceMonitors y PrometheusRules que tengan el
+    # label release=monitoring. Con estos valores Prometheus busca en TODOS los namespaces
+    # y sin exigir ese label, asi detecta los recursos del namespace "biblioteca".
     serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
+    ruleSelector: {}
+    ruleNamespaceSelector: {}
     retention: 6h
+    resources:
+      requests:
+        cpu: 100m
+        memory: 400Mi
+      limits:
+        memory: 1Gi
+
+alertmanager:
+  service:
+    type: NodePort
+    nodePort: 30093
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 50Mi
+
+# Componentes del control plane de Minikube que quedarian en DOWN y no forman parte del proyecto
+nodeExporter:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeProxy:
+  enabled: false

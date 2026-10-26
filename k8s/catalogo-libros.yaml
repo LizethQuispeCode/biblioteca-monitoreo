@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalogo-libros-service
+  namespace: biblioteca
+  labels:
+    app: catalogo-libros-service
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: catalogo-libros-service
+  template:
+    metadata:
+      labels:
+        app: catalogo-libros-service
+    spec:
+      containers:
+        - name: catalogo-libros-service
+          image: catalogo-libros-service:1.0
+          # La imagen se construye dentro del Docker de Minikube, por eso no se descarga de ningun registro
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8081
+          env:
+            # Delay artificial en milisegundos (casuistica 2). 0 = sin delay
+            - name: CATALOGO_DELAY_MS
+              value: "0"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 640Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalogo-libros-service
+  namespace: biblioteca
+  labels:
+    app: catalogo-libros-service
+spec:
+  type: NodePort
+  selector:
+    app: catalogo-libros-service
+  ports:
+    # El ServiceMonitor referencia este puerto por su nombre
+    - name: http
+      port: 8081
+      targetPort: 8081
+      nodePort: 30081

@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prestamos-service
+  namespace: biblioteca
+  labels:
+    app: prestamos-service
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: prestamos-service
+  template:
+    metadata:
+      labels:
+        app: prestamos-service
+    spec:
+      containers:
+        - name: prestamos-service
+          image: prestamos-service:1.0
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8082
+          env:
+            # Direccion del Servicio A dentro del cluster (DNS del Service)
+            - name: CATALOGO_URL
+              value: "http://catalogo-libros-service:8081"
+            # Tiempo maximo de espera hacia el catalogo, en milisegundos
+            - name: CATALOGO_TIMEOUT_MS
+              value: "2000"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 640Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prestamos-service
+  namespace: biblioteca
+  labels:
+    app: prestamos-service
+spec:
+  type: NodePort
+  selector:
+    app: prestamos-service
+  ports:
+    - name: http
+      port: 8082
+      targetPort: 8082
+      nodePort: 30082

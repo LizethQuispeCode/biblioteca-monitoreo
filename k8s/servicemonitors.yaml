@@ -1,0 +1,38 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: catalogo-libros-service
+  namespace: biblioteca
+  labels:
+    app: catalogo-libros-service
+spec:
+  # Debe coincidir con los labels del Service catalogo-libros-service
+  selector:
+    matchLabels:
+      app: catalogo-libros-service
+  namespaceSelector:
+    matchNames:
+      - biblioteca
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: prestamos-service
+  namespace: biblioteca
+  labels:
+    app: prestamos-service
+spec:
+  selector:
+    matchLabels:
+      app: prestamos-service
+  namespaceSelector:
+    matchNames:
+      - biblioteca
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

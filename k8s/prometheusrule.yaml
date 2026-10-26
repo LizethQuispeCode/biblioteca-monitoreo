@@ -1,0 +1,57 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: biblioteca-alertas
+  namespace: biblioteca
+spec:
+  groups:
+    - name: biblioteca.servicios
+      rules:
+        - alert: CatalogoServiceDown
+          # Si el servicio no tiene ningun target UP (o el target desaparecio) la expresion da 0
+          expr: (sum(up{namespace="biblioteca", job="catalogo-libros-service"}) or vector(0)) < 1
+          for: 1m
+          labels:
+            severity: critical
+            servicio: catalogo-libros-service
+          annotations:
+            summary: "El catalogo de libros esta caido"
+            description: "catalogo-libros-service no responde a Prometheus desde hace mas de 1 minuto. Sin el catalogo no se pueden aprobar prestamos."
+        - alert: PrestamosServiceDown
+          expr: (sum(up{namespace="biblioteca", job="prestamos-service"}) or vector(0)) < 1
+          for: 1m
+          labels:
+            severity: critical
+            servicio: prestamos-service
+          annotations:
+            summary: "El servicio de prestamos esta caido"
+            description: "prestamos-service no responde a Prometheus desde hace mas de 1 minuto. Los usuarios no pueden pedir libros."
+    - name: biblioteca.negocio
+      rules:
+        - alert: StockBajoCatalogo
+          expr: catalogo_libros_stock{namespace="biblioteca"} < 3
+          for: 30s
+          labels:
+            severity: warning
+            servicio: catalogo-libros-service
+          annotations:
+            summary: "Quedan muy pocos libros disponibles"
+            description: "El stock total del catalogo es {{ $value }} ejemplares. Hay que reponer inventario antes de que se rechacen mas prestamos."
+        - alert: PrestamosErroresCatalogo
+          expr: sum(increase(prestamos_catalogo_errores_total{namespace="biblioteca"}[2m])) > 0
+          for: 30s
+          labels:
+            severity: warning
+            servicio: prestamos-service
+          annotations:
+            summary: "Prestamos no logra consultar al catalogo"
+            description: "En los ultimos 2 minutos hubo {{ $value }} errores al llamar al catalogo (timeout o conexion). Los prestamos se estan rechazando con 503."
+        - alert: PrestamosRechazadosSinStock
+          expr: sum(increase(prestamos_solicitudes_total{namespace="biblioteca", resultado="sin_stock"}[2m])) > 3
+          for: 30s
+          labels:
+            severity: warning
+            servicio: prestamos-service
+          annotations:
+            summary: "Muchos prestamos rechazados por falta de stock"
+            description: "En los ultimos 2 minutos se rechazaron {{ $value }} solicitudes porque el libro pedido no tenia ejemplares."
